@@ -10,7 +10,7 @@ const money=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).
 const statusClass=v=>/active|complete|completed|paid|eligible|final|negative|acknowledged|available|enabled/i.test(String(v))?'good':/cancel|inactive|terminated|positive|suspended|overdue|failed|closed/i.test(String(v))?'bad':'warn';
 const badge=v=>`<span class="badge ${statusClass(v)}">${esc(pretty(v))}</span>`;
 const page=()=>location.pathname.split('/').pop()?.replace('.html','')||'dashboard';
-const storageKey=()=>`s4u_${C.portalCode}_membership`;
+const storageKey=()=>`s4u_${C.portalCode}_employee`;
 const brandCacheKey=id=>`s4u_${C.portalCode}_branding_${id||'default'}`;
 function readBrandCache(id){if(!id)return null;try{const x=JSON.parse(localStorage.getItem(brandCacheKey(id))||'null');if(!x||Date.now()-Number(x.saved_at||0)>1800000)return null;return x}catch{return null}}
 function writeBrandCache(id,branding){if(!id)return;try{localStorage.setItem(brandCacheKey(id),JSON.stringify({saved_at:Date.now(),branding:branding||null}))}catch{}}
@@ -507,12 +507,12 @@ async function init(){
     const startingMid=stored(),startingCache=readBrandCache(startingMid);if(startingCache?.branding)primeBranding(startingCache.branding);
     const prefetchedBrand=startingMid?fetchBranding().catch(e=>{console.warn('Branding prefetch unavailable',e);return null}):null;
     const ctx=await access();if(ctx.requires_workspace_selection){location.replace('/workspace.html');return}if(!ctx.has_access)throw new Error(ctx.reason||'Portal access denied.');if(ctx.portal_code!==C.portalCode||ctx.surface!=='dot'||!ctx.employee?.id)throw new Error('This account is not authorized for this DOT management portal.');
-    saveMid(ctx.membership?.id);window.portalCtx=ctx;
-    const cache=readBrandCache(ctx.membership?.id);if(cache?.branding)primeBranding(cache.branding);
+    saveMid(ctx.employee?.id);window.portalCtx=ctx;
+    const cache=readBrandCache(ctx.employee?.id);if(cache?.branding)primeBranding(cache.branding);
     shell(ctx);
     if(cache){if(cache.branding)applyBranding(cache.branding,ctx);else applyPlatformBranding(ctx);setBrandLogo(cache.branding?.logo_path||'/assets/img/logo.png',cache.branding?.portal_name||ctx?.subscription?.plan_name||C.label);document.body.classList.remove('loading')}
     const renderPromise=render(ctx);
-    const brandPromise=loadBranding(ctx,startingMid===ctx.membership?.id?prefetchedBrand:null);
+    const brandPromise=loadBranding(ctx,startingMid===ctx.employee?.id?prefetchedBrand:null);
     if(!cache){await brandPromise;document.body.classList.remove('loading')}else brandPromise.catch(()=>{});
     await renderPromise;
   }
